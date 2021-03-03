@@ -99,7 +99,7 @@ resource "azurerm_monitor_metric_alert" "functionalert" {
   name                = "func-metricalert"
   resource_group_name = azurerm_resource_group.rg.name
   scopes              = [azurerm_application_insights.appinsights.id]
-  description         = "Action will be triggered when Transactions count is greater than 50."
+  description         = "Action will be triggered when the request execution time is greater than 20ms."
 
   criteria {
     metric_namespace = "Microsoft.Insights/components"
