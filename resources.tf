@@ -40,12 +40,10 @@ resource "azurerm_app_service_plan" "plan" {
   name                = local.service_name
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  kind                = "Linux"
-  reserved            = true
 
   sku {
-    tier = "Standard"
-    size = "S1"
+    tier = "Free"
+    size = "F1"
   }
 }
 
@@ -65,3 +63,43 @@ resource "azurerm_function_app" "function" {
 }
 
 #Azure Monitor - Alerts
+# Workspace
+resource "azurerm_log_analytics_workspace" "workspace" {
+  name                = local.service_name
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  sku                 = "PerGB2018"
+  # retention_in_days   = "${var.retention_period}"
+}
+
+# Action Group
+resource "azurerm_monitor_action_group" "actiongroup" {
+  name                = local.service_name
+  resource_group_name = azurerm_resource_group.rg.name
+  short_name          = "action"
+
+  webhook_receiver {
+    name        = "webhook-test"
+    service_uri = "http://www.returngis.net"
+  }
+}
+
+# Alert
+resource "azurerm_monitor_metric_alert" "functionalert" {
+  name                = "func-metricalert"
+  resource_group_name = azurerm_resource_group.rg.name
+  scopes              = [azurerm_application_insights.appinsights.id]
+  description         = "Action will be triggered when Transactions count is greater than 50."
+
+  criteria {
+    metric_namespace = "Microsoft.Insights/components"
+    metric_name      = "performanceCounters/requestExecutionTime"
+    aggregation      = "Average"
+    operator         = "GreaterThan"
+    threshold        = 20
+  }
+
+  action {
+    action_group_id = azurerm_monitor_action_group.actiongroup.id
+  }
+}
